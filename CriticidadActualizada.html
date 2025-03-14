@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Equipos Industriales</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500&display=swap');
+        
+        body {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(to bottom, #2e2e2e, #1c1c1c) fixed;
+            color: #fff;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        h1 {
+            font-size: 32px;
+            color: #dcdcdc;
+            text-shadow: 2px 2px 5px rgba(255, 255, 255, 0.3);
+            margin-bottom: 20px;
+        }
+        .container {
+            width: 98%;
+            max-width: 1200px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #2e2e2e;
+            color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0px 0px 12px rgba(255, 255, 255, 0.1);
+        }
+        th, td {
+            padding: 12px;
+            font-size: 18px;
+            border: 1px solid #666;
+            text-align: center;
+        }
+        th {
+            background: #444;
+            color: white;
+        }
+        select, input[type="date"], input[type="number"], textarea {
+            background: #3a3a3a;
+            color: white;
+            border: 1px solid #666;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .add-btn, .delete-btn, .calculate-btn {
+            padding: 10px 18px;
+            font-size: 16px;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.3s ease;
+        }
+        .add-btn {
+            background: #555;
+        }
+        .delete-btn {
+            background: #333;
+        }
+        .calculate-btn {
+            background: #4CAF50;
+        }
+        .add-btn:hover, .delete-btn:hover, .calculate-btn:hover {
+            background: #777;
+        }
+        a.ver-manual {
+            font-size: 16px;
+            color: #dcdcdc;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a.ver-manual:hover {
+            color: #fff;
+        }
+        .info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: left;
+        }
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            border-radius: 5px;
+            color: white;
+            background: #4CAF50;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            display: none;
+            z-index: 1000;
+        }
+        .notification.error {
+            background: #f44336;
+        }
+        .criticidad-form {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: left;
+        }
+        .criticidad-form label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .criticidad-result {
+            margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .grafico-container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .recomendaciones {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: left;
+        }
+        .recomendaciones h2 {
+            margin-bottom: 15px;
+        }
+        .accordion-container {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .accordion {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            flex: 1;
+            overflow: hidden;
+        }
+        .accordion summary {
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid #666;
+        }
+        .accordion[open] summary {
+            border-bottom: none;
+        }
+        .accordion .content {
+            padding: 15px;
+        }
+        .formula {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .formula h3 {
+            margin-top: 0;
+        }
+    </style>
+    <!-- Incluir MathJax para renderizar fórmulas -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <!-- Incluir Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body onload="cargarEquipos()">
+    <h1>Gestión de Equipos Industriales</h1>
+    <div class="notification" id="notification"></div>
+    <div class="container">
+        <!-- Tabla de Equipos -->
+        <div>
+            <div class="button-container">
+                <button class="add-btn" onclick="mostrarModalAgregar()">Agregar</button>
+                <button class="delete-btn" onclick="eliminarSeleccionados()">Eliminar</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Manual</th>
+                        <th>Estado</th>
+                        <th>Última Revisión</th>
+                        <th>Próxima Revisión</th>
+                    </tr>
+                </thead>
+                <tbody id="equipo-lista"></tbody>
+            </table>
+        </div>
+
+        <!-- Modal para agregar elementos -->
+        <div id="modalAgregar" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #2e2e2e; padding: 20px; border-radius: 10px; box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.5); z-index: 1000;">
+            <h2>¿Qué deseas agregar?</h2>
+            <button onclick="agregarEquipo()">Equipo</button>
+            <button onclick="agregarGrafico()">Gráfico</button>
+            <button onclick="agregarFormula()">Fórmula</button>
+            <button onclick="agregarConcepto()">Concepto para Análisis</button>
+            <button onclick="cerrarModal()" style="background: #f44336; margin-top: 10px;">Cerrar</button>
+        </div>
+
+        <!-- Información de Estados -->
+        <div class="info">
+            <h3>Significado de los estados de mantenimiento:</h3>
+            <ul>
+                <li><strong>Operativo:</strong> El equipo está funcionando correctamente.</li>
+                <li><strong>En Mantenimiento:</strong> El equipo está en revisión o reparación.</li>
+                <li><strong>Fuera de Servicio:</strong> El equipo no está en condiciones de uso.</li>
+            </ul>
+        </div>
+
+        <!-- Sección de Cálculo de Criticidad -->
+        <div class="criticidad-form">
+            <h2>Cálculo de Criticidad</h2>
+            <form id="criticidadForm">
+                <label for="frecuenciaFallas">Frecuencia de Fallas (por año):</label>
+                <input type="number" id="frecuenciaFallas" min="0" required>
+
+                <label for="impactoProduccion">Impacto en la Producción (1-10):</label>
+                <input type="number" id="impactoProduccion" min="1" max="10" required>
+
+                <label for="costoReparacion">Costo de Reparación (CLP):</label>
+                <input type="number" id="costoReparacion" min="0" required>
+
+                <label for="tiempoReparacion">Tiempo de Reparación (horas):</label>
+                <input type="number" id="tiempoReparacion" min="0" required>
+
+                <button type="button" class="calculate-btn" onclick="calcularCriticidad()">Calcular Criticidad</button>
+            </form>
+            <div class="criticidad-result" id="criticidadResult"></div>
+        </div>
+
+        <!-- Sección de Fórmulas -->
+        <div class="accordion">
+            <details>
+                <summary>Fórmulas</summary>
+                <div class="content">
+                    <div class="info">
+                        <h2>Fórmulas de Criticidad y Mantenimiento</h2>
+                        <p>Aquí se presentan algunas fórmulas clave utilizadas en el análisis de criticidad y mantenimiento industrial:</p>
+
+                        <!-- Fórmula 1: Índice de Criticidad -->
+                        <div class="formula">
+                            <h3>1. Índice de Criticidad (IC)</h3>
+                            <p>El índice de criticidad se calcula como:</p>
+                            <p>\[
+                                IC = \frac{F \times I \times C \times T}{100}
+                            \]</p>
+                            <p>Donde:</p>
+                            <ul>
+                                <li>\(F\): Frecuencia de fallas (por año).</li>
+                                <li>\(I\): Impacto en la producción (1-10).</li>
+                                <li>\(C\): Costo de reparación (CLP).</li>
+                                <li>\(T\): Tiempo de reparación (horas).</li>
+                            </ul>
+                        </div>
+
+                        <!-- Fórmula 2: Número de Prioridad de Riesgo (RPN) -->
+                        <div class="formula">
+                            <h3>2. Número de Prioridad de Riesgo (RPN)</h3>
+                            <p>El RPN se calcula como:</p>
+                            <p>\[
+                                RPN = S \times O \times D
+                            \]</p>
+                            <p>Donde:</p>
+                            <ul>
+                                <li>\(S\): Severidad del fallo (1-10).</li>
+                                <li>\(O\): Ocurrencia del fallo (1-10).</li>
+                                <li>\(D\): Detección del fallo (1-10).</li>
+                            </ul>
+                        </div>
+
+                        <!-- Fórmula 3: Disponibilidad (A) -->
+                        <div class="formula">
+                            <h3>3. Disponibilidad (A)</h3>
+                            <p>La disponibilidad se calcula como:</p>
+                            <p>\[
+                                A = \frac{MTTF}{MTTF + MTTR}
+                            \]</p>
+                            <p>Donde:</p>
+                            <ul>
+                                <li>\(MTTF\): Tiempo medio entre fallos.</li>
+                                <li>\(MTTR\): Tiempo medio de reparación.</li>
+                            </ul>
+                        </div>
+
+                        <!-- Fórmula 4: Confiabilidad (R) -->
+                        <div class="formula">
+                            <h3>4. Confiabilidad (R)</h3>
+                            <p>La confiabilidad se calcula como:</p>
+                            <p>\[
+                                R(t) = e^{-\lambda t}
+                            \]</p>
+                            <p>Donde:</p>
+                            <ul>
+                                <li>\(\lambda\): Tasa de fallos.</li>
+                                <li>\(t\): Tiempo.</li>
+                            </ul>
+                        </div>
+
+                        <!-- Fórmula 5: Tasa de Fallos (λ) -->
+                        <div class="formula">
+                            <h3>5. Tasa de Fallos (\(\lambda\))</h3>
+                            <p>La tasa de fallos se calcula como:</p>
+                            <p>\[
+                                \lambda = \frac{Número\ de\ fallos}{Tiempo\ total\ de\ operación}
+                            \]</p>
+                        </div>
+
+                        <!-- Fórmula 6: Costo Total de Mantenimiento -->
+                        <div class="formula">
+                            <h3>6. Costo Total de Mantenimiento</h3>
+                            <p>El costo total de mantenimiento se calcula como:</p>
+                            <p>\[
+                                Costo\ Total = Costo\ Preventivo + Costo\ Correctivo + Costo\ de\ Parada
+                            \]</p>
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <!-- Sección de Gráficos -->
+        <div class="accordion">
+            <details>
+                <summary>Gráficos</summary>
+                <div class="content">
+                    <div class="info">
+                        <h2>Gráficos de Criticidad</h2>
+                        <p>Los gráficos son una herramienta visual poderosa para analizar la criticidad de los equipos industriales. A continuación, se presentan algunos ejemplos de gráficos útiles:</p>
+
+                        <h3>1. Gráfico de Barras de Criticidad</h3>
+                        <p>Este gráfico muestra el índice de criticidad de cada equipo en función de su frecuencia de fallas, impacto en la producción, costo de reparación y tiempo de reparación.</p>
+                        <div class="grafico-container">
+                            <canvas id="graficoCriticidad"></canvas>
+                        </div>
+
+                        <h3>2. Gráfico de Tendencias de Fallos</h3>
+                        <p>Este gráfico muestra la tendencia de fallos a lo largo del tiempo, permitiendo identificar patrones y anticipar problemas futuros.</p>
+                        <div class="grafico-container">
+                            <canvas id="graficoTendencias"></canvas>
+                        </div>
+
+                        <h3>3. Gráfico de Disponibilidad</h3>
+                        <p>Este gráfico muestra la disponibilidad de los equipos en función del tiempo medio entre fallos (MTTF) y el tiempo medio de reparación (MTTR).</p>
+                        <div class="grafico-container">
+                            <canvas id="graficoDisponibilidad"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <!-- Sección de Análisis -->
+        <div class="accordion">
+            <details>
+                <summary>Análisis</summary>
+                <div class="content">
+                    <div class="info">
+                        <h2>Análisis de Criticidad en Equipos Industriales</h2>
+                        <p>El análisis de criticidad es fundamental para la gestión del mantenimiento y la confiabilidad de los equipos industriales. A continuación, se presentan algunos enfoques y consideraciones clave:</p>
+
+                        <h3>1. Análisis Modal de Fallos y Efectos (AMFE/FMEA)</h3>
+                        <p><strong>Ventajas:</strong></p>
+                        <ul>
+                            <li>Identifica fallos potenciales y sus efectos en el sistema.</li>
+                            <li>Prioriza acciones correctivas basadas en la criticidad.</li>
+                            <li>Mejora la confiabilidad y seguridad de los equipos.</li>
+                        </ul>
+                        <p><strong>Limitaciones:</strong></p>
+                        <ul>
+                            <li>Requiere un conocimiento detallado del sistema.</li>
+                            <li>Puede ser costoso y consumir mucho tiempo.</li>
+                        </ul>
+                        <p><strong>Aplicaciones Prácticas:</strong></p>
+                        <ul>
+                            <li>Diseño de nuevos equipos.</li>
+                            <li>Optimización de procesos industriales.</li>
+                        </ul>
+
+                        <h3>2. Análisis de Árboles de Fallos (AAF)</h3>
+                        <p><strong>Ventajas:</strong></p>
+                        <ul>
+                            <li>Permite visualizar las causas raíz de los fallos.</li>
+                            <li>Útil para análisis de sistemas complejos.</li>
+                        </ul>
+                        <p><strong>Limitaciones:</strong></p>
+                        <ul>
+                            <li>Requiere datos precisos y completos.</li>
+                            <li>Puede volverse complejo en sistemas grandes.</li>
+                        </ul>
+                        <p><strong>Aplicaciones Prácticas:</strong></p>
+                        <ul>
+                            <li>Investigación de accidentes industriales.</li>
+                            <li>Evaluación de riesgos en sistemas críticos.</li>
+                        </ul>
+
+                        <h3>3. Análisis de Riesgos</h3>
+                        <p><strong>Ventajas:</strong></p>
+                        <ul>
+                            <li>Identifica y evalúa riesgos potenciales.</li>
+                            <li>Facilita la toma de decisiones informadas.</li>
+                        </ul>
+                        <p><strong>Limitaciones:</strong></p>
+                        <ul>
+                            <li>Depende de la calidad de los datos de entrada.</li>
+                            <li>Puede subestimar riesgos no identificados.</li>
+                        </ul>
+                        <p><strong>Aplicaciones Prácticas:</strong></p>
+                        <ul>
+                            <li>Gestión de proyectos industriales.</li>
+                            <li>Planificación de mantenimiento preventivo.</li>
+                        </ul>
+
+                        <h3>4. Tendencias Futuras</h3>
+                        <p>El análisis de criticidad está evolucionando con la adopción de tecnologías emergentes como:</p>
+                        <ul>
+                            <li><strong>Inteligencia Artificial (IA):</strong> Para predecir fallos y optimizar el mantenimiento.</li>
+                            <li><strong>Internet de las Cosas (IoT):</strong> Para monitoreo en tiempo real de los equipos.</li>
+                            <li><strong>Gemelos Digitales:</strong> Para simular el comportamiento de los equipos en un entorno virtual.</li>
+                        </ul>
+                    </div>
+                </div>
+            </details>
+        </div>
+
+        <!-- Sección de Recomendaciones Personalizadas -->
+        <div class="recomendaciones">
+            <h2>Recomendaciones Personalizadas</h2>
+            <textarea id="recomendacionesTextarea" placeholder="Escribe aquí tus comentarios, fórmulas, datos, etc."></textarea>
+        </div>
+    </div>
+    <script>
+        // Variables globales
+        let graficoCriticidad, graficoTendencias, graficoDisponibilidad;
+
+        // Función para mostrar notificaciones
+        function mostrarNotificacion(mensaje, esError = false) {
+            const notification = document.getElementById("notification");
+            notification.textContent = mensaje;
+            notification.className = `notification ${esError ? 'error' : ''}`;
+            notification.style.display = 'block';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        // Función para cargar equipos desde localStorage
+        function cargarEquipos() {
+            const lista = document.getElementById("equipo-lista");
+            lista.innerHTML = localStorage.getItem("equipos") || '';
+        }
+
+        // Función para guardar equipos en localStorage
+        function guardarEquipos() {
+            localStorage.setItem("equipos", document.getElementById("equipo-lista").innerHTML);
+        }
+
+        // Función para mostrar el modal de agregar
+        function mostrarModalAgregar() {
+            document.getElementById("modalAgregar").style.display = "block";
+        }
+
+        // Función para cerrar el modal
+        function cerrarModal() {
+            document.getElementById("modalAgregar").style.display = "none";
+        }
+
+        // Función para agregar un nuevo equipo
+        function agregarEquipo() {
+            const tabla = document.getElementById("equipo-lista");
+            const fila = document.createElement("tr");
+            fila.innerHTML = `
+                <td><input type="checkbox"></td>
+                <td contenteditable="true">Nuevo ID</td>
+                <td contenteditable="true">Nuevo Equipo</td>
+                <td><a href="#" class="ver-manual">📄</a></td>
+                <td>
+                    <select>
+                        <option>Operativo</option>
+                        <option>En Mantenimiento</option>
+                        <option>Fuera de Servicio</option>
+                    </select>
+                </td>
+                <td><input type="date"></td>
+                <td><input type="date"></td>
+            `;
+            tabla.appendChild(fila);
+            guardarEquipos();
+            mostrarNotificacion("Equipo agregado correctamente.");
+            cerrarModal();
+        }
+
+        // Función para agregar un gráfico
+        function agregarGrafico() {
+            mostrarNotificacion("Funcionalidad de agregar gráfico en desarrollo.");
+            cerrarModal();
+        }
+
+        // Función para agregar una fórmula
+        function agregarFormula() {
+            mostrarNotificacion("Funcionalidad de agregar fórmula en desarrollo.");
+            cerrarModal();
+        }
+
+        // Función para agregar un concepto de análisis
+        function agregarConcepto() {
+            mostrarNotificacion("Funcionalidad de agregar concepto en desarrollo.");
+            cerrarModal();
+        }
+
+        // Función para eliminar equipos seleccionados
+        function eliminarSeleccionados() {
+            const checkboxes = document.querySelectorAll("#equipo-lista input[type='checkbox']:checked");
+            if (checkboxes.length === 0) {
+                mostrarNotificacion("Selecciona al menos un equipo para eliminar.", true);
+                return;
+            }
+            checkboxes.forEach(checkbox => checkbox.closest("tr").remove());
+            guardarEquipos();
+            mostrarNotificacion("Equipos eliminados correctamente.");
+        }
+
+        // Gráfico de Criticidad
+        const ctx = document.getElementById('graficoCriticidad').getContext('2d');
+        graficoCriticidad = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Índice de Criticidad',
+                    data: [],
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Gráfico de Tendencias de Fallos
+        const ctxTendencias = document.getElementById('graficoTendencias').getContext('2d');
+        graficoTendencias = new Chart(ctxTendencias, {
+            type: 'line',
+            data: {
+                labels: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio'],
+                datasets: [{
+                    label: 'Tendencias de Fallos',
+                    data: [12, 19, 3, 5, 2, 3],
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2,
+                    fill: false
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Gráfico de Disponibilidad
+        const ctxDisponibilidad = document.getElementById('graficoDisponibilidad').getContext('2d');
+        graficoDisponibilidad = new Chart(ctxDisponibilidad, {
+            type: 'pie',
+            data: {
+                labels: ['Disponible', 'En Mantenimiento', 'Fuera de Servicio'],
+                datasets: [{
+                    label: 'Disponibilidad',
+                    data: [85, 10, 5],
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.2)',
+                        'rgba(255, 99, 132, 0.2)',
+                        'rgba(54, 162, 235, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            }
+        });
+
+        // Función para calcular la criticidad
+        function calcularCriticidad() {
+            const frecuenciaFallas = parseFloat(document.getElementById("frecuenciaFallas").value);
+            const impactoProduccion = parseFloat(document.getElementById("impactoProduccion").value);
+            const costoReparacion = parseFloat(document.getElementById("costoReparacion").value);
+            const tiempoReparacion = parseFloat(document.getElementById("tiempoReparacion").value);
+
+            if (isNaN(frecuenciaFallas) || isNaN(impactoProduccion) || isNaN(costoReparacion) || isNaN(tiempoReparacion)) {
+                mostrarNotificacion("Por favor, ingresa valores válidos en todos los campos.", true);
+                return;
+            }
+
+            // Fórmula de criticidad
+            const criticidad = (frecuenciaFallas * impactoProduccion * costoReparacion * tiempoReparacion) / 100;
+
+            // Mostrar resultado
+            const resultado = document.getElementById("criticidadResult");
+            resultado.textContent = `Índice de Criticidad: $${criticidad.toLocaleString('es-CL')} CLP`;
+
+            // Actualizar gráfico
+            graficoCriticidad.data.labels.push(`Equipo ${graficoCriticidad.data.labels.length + 1}`);
+            graficoCriticidad.data.datasets[0].data.push(criticidad);
+            graficoCriticidad.update();
+        }
+
+        // Guardar cambios en la tabla
+        document.addEventListener("input", (event) => {
+            if (event.target.tagName === 'TD' || event.target.tagName === 'SELECT' || event.target.tagName === 'INPUT') {
+                guardarEquipos();
+            }
+        });
+    </script>
+</body>
+</html>
